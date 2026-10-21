@@ -41,11 +41,29 @@ export function checkOrigin(request: Request) {
   if (request.headers.get('origin') !== new URL(request.url).origin) throw new Error('Invalid request origin.');
 }
 export function isLocalRequest(request: Request) {
+  if (process.env.VERCEL) return false;
   return ['localhost', '127.0.0.1', '[::1]'].includes(new URL(request.url).hostname);
 }
-const attempts = globalThis as typeof globalThis & { adukeLoginAttempts?: { count: number; reset: number } };
-export function allowLogin() {
-  if (!attempts.adukeLoginAttempts || attempts.adukeLoginAttempts.reset < Date.now()) attempts.adukeLoginAttempts = { count: 0, reset: Date.now() + 15 * 60 * 1000 };
-  return ++attempts.adukeLoginAttempts.count <= 15;
+type LoginAttempts = { count: number; reset: number };
+export async function allowLogin() {
+  return serialized(async () => {
+    let attempts = await readData<LoginAttempts | null>('login-attempts.json', null);
+    if (!attempts || attempts.reset < Date.now()) attempts = { count: 0, reset: Date.now() + 15 * 60 * 1000 };
+    attempts.count += 1;
+    await writeData('login-attempts.json', attempts);
+    return attempts.count <= 15;
+  });
 }
-export function resetAttempts() { attempts.adukeLoginAttempts = undefined; }
+export async function resetAttempts() { await serialized(() => writeData('login-attempts.json', { count: 0, reset: 0 })); }
+
+export async function changePassword(currentPassword: string, newPassword: string) {
+  if (newPassword.length < 12 || newPassword.length > 200) throw new Error('Use a password between 12 and 200 characters.');
+  return serialized(async () => {
+    const owner = await ownerConfig();
+    if (!owner || !verifyPassword(owner, currentPassword)) throw new Error('Incorrect current password.');
+    const salt = randomBytes(16).toString('hex');
+    const updated = { salt, hash: scryptSync(newPassword, salt, 64).toString('hex'), secret: randomBytes(32).toString('hex') };
+    await writeData('owner.json', updated);
+    return updated;
+  });
+}

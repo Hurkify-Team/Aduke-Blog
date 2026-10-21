@@ -1,41 +1,83 @@
 # Aduke Radio Blog
 
-Responsive homepage built with Next.js App Router, React, TypeScript, Tailwind CSS and Lucide icons.
+Next.js App Router, React, TypeScript and Tailwind. The original navy/coral homepage layout is retained.
 
-## Run locally
+## Local development
 
 ```sh
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000. On Windows PowerShell with script execution disabled, use `npm.cmd` instead of `npm`.
+Open http://localhost:3000. On Windows PowerShell use `npm.cmd` if execution policy blocks npm.
+Visit `/admin` locally to create the owner password (12?200 characters). Write drafts, upload covers, preview privately, publish, edit, and unpublish. Account settings allow password changes and revoke older sessions.
+Unsaved editor content is recovered from the current browser tab using session storage; it is not a substitute for saving drafts to the server. Sign-out clears this recovery copy.
+
+## Configuration
+
+Copy `.env.example` to `.env.local`:
+
+- `NEXT_PUBLIC_RADIO_STREAM_URL`: verified public audio stream; leave blank until available.
+- `NEXT_PUBLIC_SITE_URL`: final public site origin for metadata and sitemap.
+- `ADUKE_DEMO_CONTENT`: defaults on in development, off in production; explicitly set `true` for preview-only sample stories. Sample headlines are not verified reporting.
+- `ADUKE_DATA_DIR`: persistent directory for owner credentials, login limits, and posts; defaults to `data`.
+
+Production builds hide sample articles from homepage, related stories and article routes unless explicitly enabled. Real posts retain the original card positions, styling and article layout. Missing photography uses labeled placeholders. Official contact details, social URLs and radio stream still need to be supplied.
+
+## Checks
 
 ```sh
 npm run typecheck
 npm run build
-npm start
+npm run verify:publishing
+npm run verify:cloud
+npm run verify:production
 ```
 
-## Reference and assets
+The publishing check starts its own production server on port 3017 with an isolated temporary account and data directory. It creates and removes one exact upload in `public/uploads`; it never changes the real owner account. It checks draft privacy, authenticated publishing, upload validation, persistence, URL redirects, metadata and password rotation.
+Do not run development and production builds concurrently in the same `.next` directory.
 
-The supplied homepage reference determines the desktop section order, sizing, colors, headline breaks, grids, sidebar and editorial tiles. The supplied logo is used unchanged on a white backing because its navy lettering differs from the reference's white lettering.
+## Backups and hosting
 
-Original photography was not supplied separately. All photo positions are explicitly labeled placeholders; no screenshot crops or substitute celebrity photographs are used. Replace the placeholder component and hero artwork with approved images using `next/image` once assets are available. The visual result cannot match the reference photography until then.
+Without Supabase, use one Node.js process with a persistent filesystem. A serverless adapter is included for Supabase Postgres and private Storage; see [DEPLOYMENT.md](DEPLOYMENT.md). Its compare-and-swap logic is tested with a mock transport; live cloud verification still requires your Supabase project.
+Both the directory selected by `ADUKE_DATA_DIR` and `public/uploads` must persist between deployments. Uploads must remain available to the Next.js server. GitHub does not contain articles, credentials, uploads or backups.
 
-Headlines and timestamps are demonstration content, not verified reporting. Article buttons open labeled demonstration previews. Category filters, search, ticker arrows, mobile menu and persistent theme toggle work locally. Utility links show informational previews. Social icons are display-only pending official profile URLs.
+Stop the server before taking a consistent backup:
 
-Copy `.env.example` to `.env.local` and configure `NEXT_PUBLIC_RADIO_STREAM_URL` with a verified audio endpoint to enable radio playback. Without it, the player explicitly states that the stream is unavailable. No CMS, database, additional pages or external publication is included.
+```sh
+npm run backup
+```
 
-Set `NEXT_PUBLIC_SITE_URL` to the final public origin before deployment so Open Graph image URLs resolve to the correct host.
+Backups are written to `backups/<timestamp>-<pid>/`. Store an additional private copy off this computer; the owner file contains password hashes and session-signing material. To restore while the server is stopped, copy the backup's `data` contents into `ADUKE_DATA_DIR` (or `data`) and `uploads` into `public/uploads`, then restart. Test restoration separately before public launch.
 
-## Structure
+Before deployment: configure the Supabase project or choose persistent-disk hosting, configure HTTPS and the public origin, create the owner account through a controlled local setup, verify backups, supply approved images and real content, and run browser checks at desktop/tablet/mobile sizes.
 
-- `src/app`: page entry, metadata, responsive styles
-- `src/components/Homepage.tsx`: reusable page components and interactions
-- `src/data/homepage.ts`: typed demonstration content
-- `public/images/logo.png`: unchanged approved logo
+## Implemented improvements
 
-Browser screenshot comparison must be completed in an environment with a connected browser. Compare desktop at 1279 × 1169 and check mobile at 390 pixels wide; the mobile layout is an adaptation of the desktop reference.
+- Direct article links use stable slugs instead of title matching.
+- Category/search state lives in the URL and follows browser history.
+- Published dates replace invented relative trending dates.
+- Dark theme persists across homepage and reading pages.
+- Renamed published slugs redirect permanently and cannot be reused by another post.
+- JSON request sizes are enforced while reading the actual body.
+- Login limits persist across restarts; they remain account-wide for this single-owner app.
+- Published images use Next.js optimisation.
+- Sitemap, robots rules and article structured data support search engines.
 
-Validation completed: `npm run typecheck` and `npm run build` passed. The production server returned HTTP 200 for the homepage and supplied logo; rendered HTML included the hero, Latest Stories, and unavailable-stream state. Browser interaction, overflow and screenshot comparison remain unverified because no browser connection was available. Port 3000 was occupied during verification; use `npm run dev -- --port 3007` if needed.
+The backup command is for local files only. For Supabase, export/back up the database and private Storage bucket separately; do not treat a local backup as a cloud backup.
+
+The homepage geometry, brand palette, logo and section order are preserved. Visual browser QA remains required; code/build checks alone do not verify screenshot fidelity.
+
+## Owner workflow
+
+See [OWNER-GUIDE.md](OWNER-GUIDE.md) for step-by-step publishing instructions. The dashboard includes a readiness checklist, live word count, saved-story duplication, and recoverable archiving. Archived posts remain private until restored to drafts and published again.
+
+The owner article editor now uses Tiptap for headings, subheadings, bold/italic/underline/strike, alignment, lists, quotes, safe links, inline uploaded images, and undo/redo. Rich documents are stored as validated JSON with `bodyFormat: rich-v1` and rendered as React elements; existing plain-text posts remain compatible. Run `npm run verify:rich-text` for formatting validation and compatibility checks.
+
+## October 2026 editorial refresh
+
+The local launch library now contains 21 published posts: 15 user-supplied stories and six original, source-attributed research briefs. `content/researched-2026-10-21.json` preserves the reviewed manuscripts and sources. `scripts/import-researched-launch.mjs` imports them locally (skipping existing slugs) and normalises the original launch headlines/excerpts. It intentionally refuses cloud mode; live migration remains a separate step. The six new covers use a credited Creative Commons archive portrait and original editorial illustrations; see `content/IMAGE-CREDITS.md` and `/credits`. No general copyright-free claim applies to the first fifteen supplied images.
+
+The homepage initially displays nine cards, with More stories and a shareable `?view=all` archive. Sample cards are suppressed whenever real published posts are present. The same original layout and brand colours are retained, with revised headline spacing and real artist/featured/trending selections.
+
+After building, run `node scripts/verify-launch-content.mjs` to check the real local 21-post library, source links, cover routes, optimisation and attribution. This check is read-only but requires the local launch content; use the other verification scripts for isolated tests.
