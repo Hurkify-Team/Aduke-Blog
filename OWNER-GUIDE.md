@@ -82,3 +82,15 @@ The owner opens **Team access**, enters a coworker's name and unique username, a
 The owner can disable access, enable activated accounts, change roles or issue a replacement setup link. Disabling, changing a role or replacing a setup link invalidates that coworker's existing sessions. A replacement setup link requires setting a new password before signing in again. Disabling an account leaves its stories intact. Password changes and sign-out revoke that account's other sessions without signing out the rest of the team.
 
 Accounts and invitation hashes are stored in the existing private newsroom state (`team.json` locally or the Supabase state). Plain invitation tokens and passwords are not stored. Do not post setup links publicly. Owner password recovery still requires your secure recovery procedure; automatic recovery email is not provided.
+
+
+## Owner recovery and coworker accounts
+The single owner signs in under Blog owner using the original password. Team member sign-in uses each invited coworker's username and password. From Team access, the owner creates an Editor or Author invitation and privately shares its single-use setup link. Authors submit drafts; Editors review and publish. Invitations expire in seven days; the owner can disable accounts or reissue links.
+
+If the owner password is forgotten, run npm run owner:recovery in the trusted project terminal (with the production Supabase environment configured). Open .owner-recovery-link.txt privately and follow its link within 30 minutes. Choose a new password to restore the same owner account. It rotates the owner's session secret, retains posts and colleagues, and invalidates the recovery link. No public endpoint can generate recovery links. Delete the private link file after use.
+
+## Spotlight carousel
+Select Artist Spotlight in a Music story's Homepage placement and publish with an approved cover photograph. Spotlight selections are retained when another slide is added. Up to five stories rotate every seven seconds. Selected Spotlight stories take priority; recent published Music stories with approved covers fill spare slots. With fewer than five eligible stories, fewer slides appear. Featured Story chooses the opening story. The carousel pauses on hover/focus and respects reduced motion. Text and images occupy separate columns, stacking on mobile.
+
+## Nigeria and foreign news
+The admin News radar defaults to Nigeria. Use Foreign news, Needs location review or All to switch. Location is inferred from the story's subject, not the outlet's country; ambiguous stories remain unclassified. This filter applies to cached leads and rewrite ideas, including older scans.

@@ -74,7 +74,8 @@ try {
   post = await save({ ...post, status: 'published', cover: uploaded, coverAlt: 'Test brand cover' });
   const home = await (await request('/')).text();
   check('Published post appears on homepage', home.includes(post.title));
-  check('Featured post controls hero', home.includes('published-hero-title'));
+  const {load}=await import('cheerio');
+  check('Featured post opens Spotlight carousel', load(home)('.spotlight-slide:not([hidden]) h1').text()===post.title);
   check('Public article renders full text', (await (await request('/stories/' + post.slug, { authenticated: false })).text()).includes('DRAFT_CONTENT_CHECK'));
   const story = await (await request('/stories/' + post.slug, { authenticated: false })).text();
   check('HTML in article text is escaped', story.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));

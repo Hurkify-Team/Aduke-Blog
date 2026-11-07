@@ -13,6 +13,12 @@ try{
  await writeFile(folder+'/radar-articles.mjs',"export async function fetchNews(url){if(!globalThis.__radarArticles[url])throw Error('Restricted');return {text:globalThis.__radarArticles[url]};}");
  const {parseFeed,validateIdeas,brainstorm,radarFeeds,refreshRadar,radarState,compareIdea}=await import(pathToFileURL(process.cwd()+'/'+folder+'/news-radar.mjs'));
  const {serialized,writeData}=await import(pathToFileURL(process.cwd()+'/'+folder+'/store.mjs'));
+ const {newsRegion,ideaRegion}=await import(pathToFileURL(process.cwd()+'/'+folder+'/radar-types.mjs'));
+ assert.equal(newsRegion({title:'Lagos music festival announced',description:''}),'nigeria');
+ assert.equal(newsRegion({title:'Nigerian singer performs in London',description:''}),'nigeria');
+ assert.equal(newsRegion({title:'Election update from Ghana',description:''}),'foreign');
+ assert.equal(newsRegion({title:'New programme announced',description:''}),'unclassified');
+ assert.equal(ideaRegion({title:'More reporting needed',summary:'',sourceIds:['uk']},[{id:'uk',title:'London event',description:''}]),'foreign');
  const now=Date.now();
  const rss=(url,title='Public music event announced',time=now)=>'<rss><channel><item><title>'+title+'</title><link>'+url+'</link><pubDate>'+new Date(time).toUTCString()+'</pubDate><description><![CDATA[<p>A public feed description.</p>]]></description></item></channel></rss>';
  const bbc=parseFeed(rss('https://www.bbc.com/news/articles/test?utm_source=rss'),radarFeeds[0],now);

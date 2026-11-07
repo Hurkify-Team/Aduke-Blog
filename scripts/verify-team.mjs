@@ -91,6 +91,24 @@ try{
   const reissued=(await json('/api/admin/team',{cookie:owner,method:'POST',body:{action:'invite',id:authorInfo.id}})).data;
   const expired=JSON.parse(await readFile(path.join(directory,'team.json'),'utf8'));expired.find(member=>member.id===authorInfo.id).inviteExpires=Date.now()-1;await writeFile(path.join(directory,'team.json'),JSON.stringify(expired));
   check((await req('/api/admin/invite',{method:'POST',body:{action:'preview',token:token(reissued.setupUrl)}})).status===400,'Expired invitations cannot activate');
+  for(let i=1;i<=5;i++)await json('/api/admin/posts',{cookie:owner,method:'POST',body:{...fixture,title:'Spotlight slide '+i,slug:'spotlight-slide-'+i,status:'published',featured:true,spotlight:true,cover:uploaded,coverAlt:'Artist photo'}});
+  const carouselPosts=(await json('/api/admin/posts',{cookie:owner})).data;
+  check(carouselPosts.filter(post=>post.spotlight&&post.status==='published').length>=5,'Multiple Spotlight selections are retained');
+  const carouselHtml=await(await req('/')).text();
+  check(carouselHtml.includes('aria-roledescription="carousel"')&&carouselHtml.includes('5 of 5'),'Homepage renders five spotlight slides');
+  const recoveredPassword=password(),recoveryToken=randomBytes(32).toString('hex');
+  const {createHash}=await import('node:crypto');
+  await writeFile(path.join(directory,'owner-recovery.json'),JSON.stringify({hash:createHash('sha256').update(recoveryToken).digest('hex'),expires:Date.now()+60000}));
+  check((await req('/api/admin/recover',{method:'POST',origin:'https://example.org',body:{token:recoveryToken,password:recoveredPassword}})).status===400,'Cross-origin owner recovery blocked');
+  check((await req('/api/admin/recover',{method:'POST',body:{token:'0'.repeat(64),password:recoveredPassword}})).status===400,'Unknown owner recovery token rejected');
+  const oldOwnerSession=owner;
+  check((await req('/api/admin/recover',{method:'POST',body:{token:recoveryToken,password:'short'}})).status===400,'Weak recovery password rejected without consuming link');
+  owner=cookie((await json('/api/admin/recover',{method:'POST',body:{token:recoveryToken,password:recoveredPassword}})).response);
+  check((await req('/api/admin/recover',{method:'POST',body:{token:recoveryToken,password:recoveredPassword}})).status===400,'Owner recovery is single use');
+  check((await req('/api/admin/posts',{cookie:owner})).status===200,'Recovered owner can access existing posts');
+  check((await req('/api/admin/posts',{cookie:oldOwnerSession})).status===401,'Owner recovery revokes old sessions');
+  check((await req('/api/admin/auth',{method:'POST',body:{username:'owner',password:ownerPassword}})).status===401,'Recovery revokes old owner password');
+  check((await req('/api/admin/auth',{method:'POST',body:{username:'owner',password:recoveredPassword}})).status===200,'New owner password works');
   console.log('PASS: '+checks+' team access and Artist Spotlight integration checks.');
 }catch(error){console.error('Failed after '+checks+' successful checks.');console.error(error.message);console.error(output.slice(-2000));process.exitCode=1;}
 finally{if(server&&server.exitCode===null){const ended=new Promise(resolve=>server.once('exit',resolve));server.kill();await ended;}if(uploaded&&/^\/uploads\/[a-f0-9-]+\.png$/.test(uploaded))await rm(path.join(process.cwd(),'public',uploaded),{force:true});for(const file of await readdir(directory))await rm(path.join(directory,file));await rmdir(directory);}

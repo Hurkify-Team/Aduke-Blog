@@ -75,7 +75,7 @@ export function validatePost(input: Record<string, unknown>, old?: Post): Post {
     if (text) coverCredit = { text, url: url ? referenceUrl(url).href : '' };
   }
   const spotlight = input.spotlight === true || (input.spotlight === undefined && old?.spotlight === undefined && old?.featured === true && category === 'Music');
-  if (spotlight && input.featured === true && (category !== 'Music' || (input.status === 'published' && !cover))) throw new Error('Artist Spotlight requires the Music category and a cover photograph.');
+  if (spotlight && (category !== 'Music' || (input.status === 'published' && !cover))) throw new Error('Artist Spotlight requires the Music category and a cover photograph.');
   const now = new Date(Math.max(Date.now(), old ? Date.parse(old.updatedAt) + 1 : 0)).toISOString();
   return { id: old?.id || randomUUID(), slug, previousSlugs: old ? [...new Set([...(old.previousSlugs || []), ...(old.publishedAt && old.slug !== slug ? [old.slug] : [])])].filter(value => value !== slug) : [], title, category, excerpt, source, coverCredit, body: bodyFormat ? JSON.stringify(validateRichBody(body)) : body, bodyFormat, author, cover, coverAlt, video, status: input.status, spotlight, createdBy: old?.createdBy, updatedBy: old?.updatedBy, featured: input.featured === true, trending: input.trending === true, createdAt: old?.createdAt || now, updatedAt: now, publishedAt: old?.publishedAt || (input.status === 'published' ? now : null) };
 }
@@ -98,7 +98,7 @@ export async function savePost(input: Record<string, unknown>, id?: string, acto
     post.updatedBy = actor?.id || old?.updatedBy || 'owner';
     if (!(await allCategories()).includes(post.category)) throw new Error('Create or select an existing category before saving.');
     if (posts.some(p => p.id !== post.id && (p.slug === post.slug || p.previousSlugs?.includes(post.slug)))) throw new Error('That URL slug is already in use.');
-    if (post.featured && post.status === 'published') posts.forEach(p => { if (p.id !== post.id && p.featured) { p.featured = false; p.spotlight = false; p.updatedBy = actor?.id || 'owner'; p.updatedAt = new Date(Math.max(Date.now(), Date.parse(p.updatedAt) + 1)).toISOString(); } });
+    if (post.featured && post.status === 'published') posts.forEach(p => { if (p.id !== post.id && p.featured) { p.spotlight ??= p.category === 'Music'; p.featured = false; p.updatedBy = actor?.id || 'owner'; p.updatedAt = new Date(Math.max(Date.now(), Date.parse(p.updatedAt) + 1)).toISOString(); } });
     await writeData('posts.json', [...posts.filter(p => p.id !== post.id), post]);
     return post;
   });

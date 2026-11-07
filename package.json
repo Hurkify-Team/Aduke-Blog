@@ -14,7 +14,8 @@
     "verify:rich-text": "node scripts/verify-rich-text.mjs",
     "verify:import": "node scripts/verify-import.mjs",
     "verify:team": "node scripts/verify-team.mjs",
-    "verify:radar": "node scripts/verify-radar.mjs"
+    "verify:radar": "node scripts/verify-radar.mjs",
+    "owner:recovery": "node scripts/owner-recovery.mjs"
   },
   "dependencies": {
     "@tiptap/extension-image": "^3.32.0",
