@@ -26,3 +26,9 @@ Enabling Supabase switches the source of truth. It does not silently upload loca
 - Browser visual QA against the original desktop and mobile design; no connected browser was available during implementation.
 - Pagination, article revisions and richer media management are future enhancements. Recoverable archival is implemented.
 - Email-based password recovery is not implemented; use the dashboard password change while signed in and retain secure account recovery procedures.
+
+
+## Migrate the existing local newsroom
+After running the SQL and saving the Supabase server settings privately in `.env.local`, run `node scripts/migrate-to-supabase.mjs` for a read-only check. Then run `node scripts/migrate-to-supabase.mjs --apply`. The migration refuses to replace a nonempty cloud newsroom, backs up local data and uploads, verifies uploaded bytes, and commits posts, categories and the existing owner account using a version check. Local originals are retained. The migrated admin uses your existing password.
+
+Vercel settings: import Hurkify-Team/Aduke-Blog, framework Next.js, root `./`, default build/output settings. Add `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_UPLOAD_BUCKET=aduke-uploads`, `GEMINI_API_KEY`, `GEMINI_IMPORT_MODEL`, and `ADUKE_DEMO_CONTENT=false` in the intended deployment environment. Keep server keys private. Set `NEXT_PUBLIC_SITE_URL` to the final public HTTPS origin when known; when absent, the app falls back to Vercel's production domain. Do not copy the local `http://localhost:3000` value into Vercel. Leave the radio stream unset until available.
