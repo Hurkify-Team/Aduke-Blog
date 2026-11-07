@@ -65,3 +65,20 @@ Official video API documentation: https://ai.google.dev/gemini-api/docs/generate
 
 ## Create a category
 Sports is included as a default category. In the editor's **Details** section, open **Create a category**, enter a name and select **Add**. It is saved for future stories and selected for the current post. Publish posts normally; categories appear in the public topic filters and extra topics are listed under **More**. Gemini imports can choose from your saved categories. Case/whitespace duplicates reuse the existing category. Categories are stored alongside your articles in local or configured Supabase storage; include `categories.json` in filesystem backups.
+
+
+## Artist Spotlight
+In the post editor, choose **Publishing ? Homepage placement ? Artist Spotlight**. The editor selects Music as its category. Add a permitted artist cover photograph, write the headline, excerpt and full article, then publish. The spotlight appears as the main homepage feature and links to that article. Only one main feature appears at a time; publishing a different spotlight or featured story replaces it. Choosing Regular story removes that story from the main feature. A draft is not shown publicly.
+
+## Newsroom accounts and team access
+The existing owner now signs in at `/admin` with username **owner** and the same password as before. Existing owner sessions remain valid. Coworkers never need the owner's password.
+
+The owner opens **Team access**, enters a coworker's name and unique username, and chooses Editor or Author. **Create setup link** produces a private, one-use link valid for 7 days. Copy it and share it directly with that coworker; the app does not send email. The recipient sets a password of at least 12 characters and is signed in automatically. Afterwards they use their own username/password at `/admin`.
+
+- Owner: manages accounts, publishing, categories and all stories.
+- Editor: manages/publishes stories and categories, including Artist Spotlight, but cannot manage accounts.
+- Author: creates/edits/previews their own unpublished drafts and uses imports/uploads. Editors/owner review and publish them. Authors cannot view another writer's private drafts, publish, change homepage placement, or modify a published story.
+
+The owner can disable access, enable activated accounts, change roles or issue a replacement setup link. Disabling, changing a role or replacing a setup link invalidates that coworker's existing sessions. A replacement setup link requires setting a new password before signing in again. Disabling an account leaves its stories intact. Password changes and sign-out revoke that account's other sessions without signing out the rest of the team.
+
+Accounts and invitation hashes are stored in the existing private newsroom state (`team.json` locally or the Supabase state). Plain invitation tokens and passwords are not stored. Do not post setup links publicly. Owner password recovery still requires your secure recovery procedure; automatic recovery email is not provided.

@@ -1,3 +1,4 @@
+import { canManagePost, type StaffIdentity } from '@/types/team';
 import { bodyText, richBodyFormat, validateRichBody } from './rich-text';
 import { cloudEnabled, cloudRead, cloudWrite, cloudTransaction } from './cloud';
 import 'server-only';
@@ -73,8 +74,10 @@ export function validatePost(input: Record<string, unknown>, old?: Post): Post {
     const text = field(credit, 'text', 200), url = field(credit, 'url', 2048);
     if (text) coverCredit = { text, url: url ? referenceUrl(url).href : '' };
   }
+  const spotlight = input.spotlight === true || (input.spotlight === undefined && old?.spotlight === undefined && old?.featured === true && category === 'Music');
+  if (spotlight && input.featured === true && (category !== 'Music' || (input.status === 'published' && !cover))) throw new Error('Artist Spotlight requires the Music category and a cover photograph.');
   const now = new Date(Math.max(Date.now(), old ? Date.parse(old.updatedAt) + 1 : 0)).toISOString();
-  return { id: old?.id || randomUUID(), slug, previousSlugs: old ? [...new Set([...(old.previousSlugs || []), ...(old.publishedAt && old.slug !== slug ? [old.slug] : [])])].filter(value => value !== slug) : [], title, category, excerpt, source, coverCredit, body: bodyFormat ? JSON.stringify(validateRichBody(body)) : body, bodyFormat, author, cover, coverAlt, video, status: input.status, featured: input.featured === true, trending: input.trending === true, createdAt: old?.createdAt || now, updatedAt: now, publishedAt: old?.publishedAt || (input.status === 'published' ? now : null) };
+  return { id: old?.id || randomUUID(), slug, previousSlugs: old ? [...new Set([...(old.previousSlugs || []), ...(old.publishedAt && old.slug !== slug ? [old.slug] : [])])].filter(value => value !== slug) : [], title, category, excerpt, source, coverCredit, body: bodyFormat ? JSON.stringify(validateRichBody(body)) : body, bodyFormat, author, cover, coverAlt, video, status: input.status, spotlight, createdBy: old?.createdBy, updatedBy: old?.updatedBy, featured: input.featured === true, trending: input.trending === true, createdAt: old?.createdAt || now, updatedAt: now, publishedAt: old?.publishedAt || (input.status === 'published' ? now : null) };
 }
 export function youtubeId(value: string) {
   try { const url = new URL(value); if (url.protocol !== 'https:') return null;
@@ -82,30 +85,35 @@ export function youtubeId(value: string) {
     return id && /^[\w-]{11}$/.test(id) ? id : null;
   } catch { return null; }
 }
-export async function savePost(input: Record<string, unknown>, id?: string) {
+export async function savePost(input: Record<string, unknown>, id?: string, actor?: StaffIdentity) {
   return serialized(async () => {
     const posts = await allPosts(); const old = id ? posts.find(p => p.id === id) : undefined;
     if (id && !old) throw new Error('Post not found.');
+    if (actor && old && !canManagePost(actor,old)) throw new Error('You can edit only your own unpublished stories.');
+    if (actor?.role === 'author' && (input.status !== 'draft' || input.featured === true || input.trending === true || input.spotlight === true)) throw new Error('Authors save drafts for an editor to review and publish.');
     if (old?.status === 'archived') throw new Error('Restore this story to drafts before editing it.');
     if (old && input.updatedAt !== old.updatedAt) throw new Error('This post changed in another window. Reload it before saving.');
     const post = validatePost(input, old);
+    post.createdBy = old?.createdBy || (old ? 'owner' : actor?.id || 'owner');
+    post.updatedBy = actor?.id || old?.updatedBy || 'owner';
     if (!(await allCategories()).includes(post.category)) throw new Error('Create or select an existing category before saving.');
     if (posts.some(p => p.id !== post.id && (p.slug === post.slug || p.previousSlugs?.includes(post.slug)))) throw new Error('That URL slug is already in use.');
-    if (post.featured && post.status === 'published') posts.forEach(p => { if (p.id !== post.id) p.featured = false; });
+    if (post.featured && post.status === 'published') posts.forEach(p => { if (p.id !== post.id && p.featured) { p.featured = false; p.spotlight = false; p.updatedBy = actor?.id || 'owner'; p.updatedAt = new Date(Math.max(Date.now(), Date.parse(p.updatedAt) + 1)).toISOString(); } });
     await writeData('posts.json', [...posts.filter(p => p.id !== post.id), post]);
     return post;
   });
 }
 
-export async function archivePost(id: string, updatedAt: string, restore: boolean) {
+export async function archivePost(id: string, updatedAt: string, restore: boolean, actor?: StaffIdentity) {
   return serialized(async () => {
     const posts = await allPosts();
     const post = posts.find(item => item.id === id);
     if (!post) throw new Error('Post not found.');
+    if (actor && !canManagePost(actor,post)) throw new Error('You can archive only your own unpublished stories.');
     if (post.updatedAt !== updatedAt) throw new Error('This post changed in another window. Reload it before continuing.');
     if (restore && post.status !== 'archived') throw new Error('This story is not archived.');
     if (!restore && post.status === 'archived') throw new Error('This story is already archived.');
-    const updated: Post = { ...post, status: restore ? 'draft' : 'archived', featured: false, trending: false, updatedAt: new Date(Math.max(Date.now(), Date.parse(post.updatedAt) + 1)).toISOString() };
+    const updated: Post = { ...post, status: restore ? 'draft' : 'archived', featured: false, spotlight: false, trending: false, updatedBy: actor?.id || 'owner', updatedAt: new Date(Math.max(Date.now(), Date.parse(post.updatedAt) + 1)).toISOString() };
     await writeData('posts.json', posts.map(item => item.id === id ? updated : item));
     return updated;
   });

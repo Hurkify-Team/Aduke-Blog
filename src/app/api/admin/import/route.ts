@@ -2,7 +2,7 @@ import { publicPage } from '@/lib/safe-fetch';
 import { storeImage } from '@/lib/image-storage';
 import sharp from 'sharp';
 import { NextResponse } from 'next/server';
-import { isOwner, checkOrigin } from '@/lib/auth';
+import { isStaff, checkOrigin } from '@/lib/auth';
 import { videoSource } from '@/lib/video-import';
 import { limitedBytes, limitedJson } from '@/lib/request';
 import { fetchNews, writeNewsDraft } from '@/lib/news-import';
@@ -18,11 +18,11 @@ async function claimImport() {
   });
 }
 export async function GET() {
-  if (!await isOwner()) return NextResponse.json({ error: 'Please sign in.' }, { status: 401 });
+  if (!await isStaff()) return NextResponse.json({ error: 'Please sign in.' }, { status: 401 });
   return NextResponse.json({ configured: !!process.env.GEMINI_API_KEY }, { headers: { 'Cache-Control': 'no-store' } });
 }
 export async function POST(request: Request) {
-  if (!await isOwner()) return NextResponse.json({ error: 'Please sign in.' }, { status: 401 });
+  if (!await isStaff()) return NextResponse.json({ error: 'Please sign in.' }, { status: 401 });
   let stage = 'starting the import';
   try {
     checkOrigin(request);

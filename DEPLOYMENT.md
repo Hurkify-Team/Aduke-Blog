@@ -11,7 +11,7 @@ The code is prepared; no cloud resources have been created or deployed.
 
 Do not expose the service role key in browser settings or public client code. The Supabase table and RPC functions have no anonymous/authenticated access grants. Public readers receive published post fields through the server; uploads are served through the application's validated `/uploads/<uuid>.<extension>` route. Uploaded files are public article media; do not upload confidential files.
 
-The cloud adapter stores this small single-owner newsroom as versioned JSON state in Postgres. Conflicting transactions retry against the latest version; individual article edits also enforce an `updatedAt` check. A high-volume newsroom should migrate to normalised post/revision tables. This adapter has not been validated against a live Supabase project yet.
+The cloud adapter stores this small owner-managed newsroom as versioned JSON state in Postgres. Conflicting transactions retry against the latest version; individual article edits also enforce an `updatedAt` check. A high-volume newsroom should migrate to normalised post/revision tables. Local content migration and deployed read access have been verified against Supabase. Run the full write/publishing checks against your deployment after changes.
 
 Upload limit: 3 MB per image with a 4 MB total multipart limit. Originals are stored in the private bucket, with Next.js providing optimised public article images.
 
@@ -32,3 +32,7 @@ Enabling Supabase switches the source of truth. It does not silently upload loca
 After running the SQL and saving the Supabase server settings privately in `.env.local`, run `node scripts/migrate-to-supabase.mjs` for a read-only check. Then run `node scripts/migrate-to-supabase.mjs --apply`. The migration refuses to replace a nonempty cloud newsroom, backs up local data and uploads, verifies uploaded bytes, and commits posts, categories and the existing owner account using a version check. Local originals are retained. The migrated admin uses your existing password.
 
 Vercel settings: import Hurkify-Team/Aduke-Blog, framework Next.js, root `./`, default build/output settings. Add `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_UPLOAD_BUCKET=aduke-uploads`, `GEMINI_API_KEY`, `GEMINI_IMPORT_MODEL`, and `ADUKE_DEMO_CONTENT=false` in the intended deployment environment. Keep server keys private. Set `NEXT_PUBLIC_SITE_URL` to the final public HTTPS origin when known; when absent, the app falls back to Vercel's production domain. Do not copy the local `http://localhost:3000` value into Vercel. Leave the radio stream unset until available.
+
+
+## Team access rollout
+Existing owner credentials and sessions are retained. The owner's username is `owner`. No new SQL or cloud migration is required for team accounts; `team.json` is added to the existing private state when the owner creates the first invitation. Editors and Authors activate through `/admin/join` and set their own passwords. Keep setup links private; they expire after seven days and are single-use. Team management is owner-only. Do not run test scripts against production account data; `verify:team` uses an isolated temporary local newsroom.

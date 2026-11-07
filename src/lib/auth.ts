@@ -1,4 +1,6 @@
 import 'server-only';
+import { accounts, identity, verifyCredentials, type Account } from './accounts';
+import type { StaffIdentity } from '@/types/team';
 import { cookies } from 'next/headers';
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import { readData, serialized, writeData } from './store';
@@ -22,12 +24,30 @@ export function sessionToken(owner: Owner) {
   const payload = `${Date.now() + 12 * 60 * 60 * 1000}.${randomBytes(16).toString('hex')}`;
   return `${payload}.${createHmac('sha256', owner.secret).update(payload).digest('hex')}`;
 }
-export async function isOwner() {
-  const owner = await ownerConfig(), token = (await cookies()).get(cookieName)?.value;
-  if (!owner || !token) return false;
-  const parts = token.split('.'); if (parts.length !== 3 || !/^\d+$/.test(parts[0]) || !/^[a-f0-9]{64}$/.test(parts[2])) return false;
-  const expected = createHmac('sha256', owner.secret).update(parts.slice(0, 2).join('.')).digest();
-  return timingSafeEqual(expected, Buffer.from(parts[2], 'hex')) && Number(parts[0]) > Date.now();
+export function staffSessionToken(account: Account) {
+  if (!account.secret || account.status!=='active') throw new Error('Account is not active.');
+  const payload=`${Date.now()+12*60*60*1000}.${randomBytes(16).toString('hex')}.${account.id}`;
+  return `${payload}.${createHmac('sha256',account.secret).update(payload).digest('hex')}`;
+}
+export async function currentUser(): Promise<StaffIdentity | null> {
+  const token=(await cookies()).get(cookieName)?.value;
+  if (!token) return null;
+  const parts=token.split('.');
+  if (![3,4].includes(parts.length) || !/^\d+$/.test(parts[0]) || !/^[a-f0-9]{32}$/.test(parts[1]) || Number(parts[0])<=Date.now()) return null;
+  const signature=parts[parts.length-1]; if (!/^[a-f0-9]{64}$/.test(signature)) return null;
+  let secret: string | undefined, user:StaffIdentity;
+  if (parts.length===3) { const owner=await ownerConfig(); if (!owner) return null;secret=owner.secret;user={id:'owner',username:'owner',name:'Blog owner',role:'owner'}; }
+  else { const account=(await accounts()).find(account=>account.id===parts[2] && account.status==='active'); if (!account) return null;secret=account.secret;user=identity(account); }
+  if (!secret) return null;
+  const expected=createHmac('sha256',secret).update(parts.slice(0,-1).join('.')).digest();
+  return timingSafeEqual(expected,Buffer.from(signature,'hex'))?user:null;
+}
+export async function isOwner() { return (await currentUser())?.role==='owner'; }
+export async function isStaff() { return !!await currentUser(); }
+export async function authenticateAccount(username: string,password: string) {
+  if (username.trim().toLowerCase()==='owner') { const owner=await ownerConfig(); if (!owner || !verifyCredentials(owner,password)) return null;return sessionToken(owner); }
+  const account=(await accounts()).find(account=>account.username===username.trim().toLowerCase() && account.status==='active');
+  return account && verifyCredentials(account,password)?staffSessionToken(account):null;
 }
 export async function setSession(token: string, secure: boolean) {
   (await cookies()).set(cookieName, token, { httpOnly: true, sameSite: 'strict', secure, path: '/', maxAge: 12 * 60 * 60 });

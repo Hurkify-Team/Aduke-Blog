@@ -6,9 +6,10 @@ import nextEnv from '@next/env';
 nextEnv.loadEnvConfig(process.cwd());
 function moduleUrl(source) { return 'data:text/javascript;base64,' + Buffer.from(ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 } }).outputText).toString('base64'); }
 const richUrl = moduleUrl(await readFile('src/lib/rich-text.ts', 'utf8'));
+const teamUrl = moduleUrl(await readFile('src/types/team.ts', 'utf8'));
 const typesUrl = moduleUrl(await readFile('src/types/post.ts', 'utf8'));
 const cloudUrl = moduleUrl((await readFile('src/lib/cloud.ts', 'utf8')).replace("import 'server-only';", ''));
-const source = (await readFile('src/lib/store.ts', 'utf8')).replace("import 'server-only';", '').replaceAll("'./rich-text'", JSON.stringify(richUrl)).replaceAll("'./cloud'", JSON.stringify(cloudUrl)).replaceAll("'@/types/post'", JSON.stringify(typesUrl));
+const source = (await readFile('src/lib/store.ts', 'utf8')).replace("import 'server-only';", '').replaceAll("'./rich-text'", JSON.stringify(richUrl)).replaceAll("'./cloud'", JSON.stringify(cloudUrl)).replaceAll("'@/types/post'", JSON.stringify(typesUrl)).replaceAll("'@/types/team'", JSON.stringify(teamUrl));
 const { allPosts, savePost } = await import(moduleUrl(source));
 const { cloudEnabled } = await import(cloudUrl);
 if (cloudEnabled()) throw new Error('Import this reviewed launch content locally first. Cloud migration is a separate step.');

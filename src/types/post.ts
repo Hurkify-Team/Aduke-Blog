@@ -2,7 +2,7 @@ export type PostSource = { url: string; title: string; publisher: string; publis
 export const postCategories = ['Music', 'Celebrities', 'Nollywood', 'Lifestyle', 'Entertainment News', 'Interviews', 'Videos', 'Sports'] as const;
 export type Post = {
   id: string; slug: string; previousSlugs?: string[]; title: string; category: string; excerpt: string;
-  source?: PostSource; coverCredit?: { text: string; url: string };
+  createdBy?: string; updatedBy?: string; spotlight?: boolean; source?: PostSource; coverCredit?: { text: string; url: string };
   body: string; bodyFormat?: 'rich-v1'; author: string; cover: string; coverAlt: string; video: string;
   status: 'draft' | 'published' | 'archived'; featured: boolean; trending: boolean;
   createdAt: string; updatedAt: string; publishedAt: string | null; demo?: boolean;

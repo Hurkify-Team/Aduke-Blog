@@ -1,10 +1,10 @@
 import { storeImage } from '@/lib/image-storage';
 import { limitedBytes } from '@/lib/request';
 import { NextResponse } from 'next/server';
-import { checkOrigin, isOwner } from '@/lib/auth';
+import { checkOrigin, isStaff } from '@/lib/auth';
 export const runtime = 'nodejs';
 export async function POST(request: Request) {
-  if (!await isOwner()) return NextResponse.json({ error: 'Please sign in.' }, { status: 401 });
+  if (!await isStaff()) return NextResponse.json({ error: 'Please sign in.' }, { status: 401 });
   try {
     checkOrigin(request);
     if (Number(request.headers.get('content-length')) > 4 * 1024 * 1024) throw new Error('Choose an image smaller than 3 MB.');

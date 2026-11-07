@@ -60,7 +60,7 @@ Before deployment: configure the Supabase project or choose persistent-disk host
 - Dark theme persists across homepage and reading pages.
 - Renamed published slugs redirect permanently and cannot be reused by another post.
 - JSON request sizes are enforced while reading the actual body.
-- Login limits persist across restarts; they remain account-wide for this single-owner app.
+- Login limits persist across restarts; a shared newsroom throttle applies to sign-in and activation requests.
 - Published images use Next.js optimisation.
 - Sitemap, robots rules and article structured data support search engines.
 
@@ -81,3 +81,9 @@ The local launch library now contains 21 published posts: 15 user-supplied stori
 The homepage initially displays nine cards, with More stories and a shareable `?view=all` archive. Sample cards are suppressed whenever real published posts are present. The same original layout and brand colours are retained, with revised headline spacing and real artist/featured/trending selections.
 
 After building, run `node scripts/verify-launch-content.mjs` to check the real local 21-post library, source links, cover routes, optimisation and attribution. This check is read-only but requires the local launch content; use the other verification scripts for isolated tests.
+
+
+## Team accounts and Artist Spotlight
+The owner signs in at `/admin` using username `owner` and the existing password. The owner can invite Editors (publishing access) or Authors (own unpublished drafts only) through private one-use setup links in Team access, change roles and disable accounts. Account secrets and invitation hashes use the configured private newsroom storage. No email delivery is configured. See `OWNER-GUIDE.md` for the full workflow.
+
+Choose **Publishing > Homepage placement > Artist Spotlight** for a Music article with a cover photograph. Publishing replaces the previous main feature. Use `npm run verify:team` for isolated role, invitation, revocation and spotlight integration checks.

@@ -5,8 +5,8 @@ import ts from 'typescript';
 const directory = 'scripts/.import-test-' + Date.now();
 await mkdir(directory);
 try {
-  for (const [name, file] of [['safe-fetch','src/lib/safe-fetch.ts'],['post','src/types/post.ts'],['news-import','src/lib/news-import.ts'],['video-import','src/lib/video-import.ts'],['cloud','src/lib/cloud.ts'],['rich-text','src/lib/rich-text.ts'],['store','src/lib/store.ts'],['image-storage','src/lib/image-storage.ts']]) {
-    const source = (await readFile(file, 'utf8')).replace("import 'server-only';", '').replaceAll("'./safe-fetch'", "'./safe-fetch.mjs'").replaceAll("'@/types/post'", "'./post.mjs'").replaceAll("'./cloud'", "'./cloud.mjs'").replaceAll("'./rich-text'", "'./rich-text.mjs'");
+  for (const [name, file] of [['safe-fetch','src/lib/safe-fetch.ts'],['post','src/types/post.ts'],['team','src/types/team.ts'],['news-import','src/lib/news-import.ts'],['video-import','src/lib/video-import.ts'],['cloud','src/lib/cloud.ts'],['rich-text','src/lib/rich-text.ts'],['store','src/lib/store.ts'],['image-storage','src/lib/image-storage.ts']]) {
+    const source = (await readFile(file, 'utf8')).replace("import 'server-only';", '').replaceAll("'./safe-fetch'", "'./safe-fetch.mjs'").replaceAll("'@/types/post'", "'./post.mjs'").replaceAll("'@/types/team'", "'./team.mjs'").replaceAll("'./cloud'", "'./cloud.mjs'").replaceAll("'./rich-text'", "'./rich-text.mjs'");
     await writeFile(directory + '/' + name + '.mjs', ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 } }).outputText);
   }
   const { newsUrl, publicAddress, publicPage, pinnedLookup } = await import(pathToFileURL(process.cwd() + '/' + directory + '/safe-fetch.mjs'));
@@ -119,6 +119,8 @@ try {
   const coverCredit = { text: 'Example photographer, CC BY 4.0', url: 'https://example.com/photo-licence' };
   const samplePost = { title:'Photo credit test', category:'Music', body:'A draft for checking photo credits.', status:'draft', cover:'/uploads/12345678-1234-1234-1234-123456789abc.jpg', coverAlt:'An approved photograph', coverCredit };
   assert.deepEqual(validatePost(samplePost).coverCredit, coverCredit);
+  assert.equal(validatePost({...samplePost,featured:true},{...samplePost,id:'legacy',featured:true,updatedAt:new Date().toISOString(),createdAt:new Date().toISOString()}).spotlight,true);
+  assert.equal(validatePost({...samplePost,featured:true,spotlight:false},{...samplePost,id:'legacy',featured:true,updatedAt:new Date().toISOString(),createdAt:new Date().toISOString()}).spotlight,false);
   assert.throws(() => validatePost({...samplePost, coverCredit:{...coverCredit,url:'javascript:alert(1)'}}));
   assert.equal(validatePost({...samplePost,cover:'',coverAlt:''}).coverCredit, undefined);
   if (!process.env.SUPABASE_URL && !process.env.VERCEL) {
@@ -149,6 +151,6 @@ try {
   }
   console.log('PASS: URL/network restrictions, robots, extraction, paywall/reuse restrictions, original-brief validation and mocked AI generation.');
 } finally {
-  for (const name of ['safe-fetch','post','news-import','video-import','cloud','rich-text','store','image-storage']) await rm(directory + '/' + name + '.mjs', {force:true});
+  for (const name of ['safe-fetch','post','team','news-import','video-import','cloud','rich-text','store','image-storage']) await rm(directory + '/' + name + '.mjs', {force:true});
   await rmdir(directory);
 }

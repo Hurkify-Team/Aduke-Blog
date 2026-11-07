@@ -114,3 +114,26 @@
 .owner-app .create-category>div button { padding:8px 12px; border-radius:7px; background:#031239; color:white; font-size:12px; }
 .owner-app .create-category input { min-width:0; }
 .owner-app .create-category label { margin-top:12px; }
+
+.owner-app .team-access { margin:18px 0 0; background:#fff; border:1px solid #dde5f1; border-radius:14px; }
+.owner-app .team-access>summary { display:flex; align-items:center; gap:12px; padding:19px 20px; cursor:pointer; list-style:none; font-size:13px; font-weight:700; }
+.owner-app .team-access>summary svg { color:#426298; }
+.owner-app .team-access>summary small { margin:0 0 0 auto; font-weight:400; }
+.owner-app .team-access-content { padding:0 22px 22px; border-top:1px solid #edf1f8; }
+.owner-app .team-access-content h3 { font-size:17px; margin:22px 0 8px; }
+.owner-app .team-access-content>p { font-size:12px; line-height:1.8; color:#65748e; }
+.owner-app .team-access form { max-width:700px; }
+.owner-app .team-access form>.primary-button { margin-top:18px; padding:11px 16px; border-radius:8px; }
+.owner-app .team-invite-link { padding:16px; background:#f1f6ff; border:1px solid #d9e5f7; border-radius:10px; margin-top:20px; }
+.owner-app .team-invite-link label { margin-top:0; }
+.owner-app .team-invite-link button { padding:9px 12px; margin-top:10px; border-radius:7px; }
+.owner-app .team-members { margin-top:22px; }
+.owner-app .team-members article { padding:17px 0; display:flex; justify-content:space-between; align-items:center; gap:18px; border-top:1px solid #edf1f8; }
+.owner-app .team-members article strong { font-size:13px; }
+.owner-app .team-members article span { display:block; font-size:11px; color:#71819a; margin-top:6px; }
+.owner-app .team-members article>div:last-child { display:flex; gap:8px; align-items:center; }
+.owner-app .team-members article select { padding:8px; font-size:12px; min-width:90px; }
+.owner-app .team-members article button { white-space:nowrap; padding:9px 11px; background:#f2f5fb; border-radius:7px; font-size:11px; color:#3c597d; }
+.owner-app .author-review-note { padding:16px; margin:20px 0 0; background:#f0f5ff; border-radius:9px; font-size:12px; line-height:1.8; color:#496489; }
+.owner-app .placement-options>label[for=homepage-placement] { font-size:12px; font-weight:700; }
+@media(max-width:760px) { .owner-app .team-members article { display:block; } .owner-app .team-members article>div:last-child { margin-top:14px; flex-wrap:wrap; } .owner-app .team-access-content { padding:0 16px 18px; } }

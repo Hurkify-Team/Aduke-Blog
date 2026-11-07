@@ -12,7 +12,8 @@
     "verify:cloud": "node scripts/verify-cloud.mjs",
     "verify:production": "node scripts/verify-production.mjs",
     "verify:rich-text": "node scripts/verify-rich-text.mjs",
-    "verify:import": "node scripts/verify-import.mjs"
+    "verify:import": "node scripts/verify-import.mjs",
+    "verify:team": "node scripts/verify-team.mjs"
   },
   "dependencies": {
     "@tiptap/extension-image": "^3.32.0",
