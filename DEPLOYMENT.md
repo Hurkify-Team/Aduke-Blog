@@ -1,6 +1,6 @@
 # Vercel + Supabase setup
 
-The code is prepared; no cloud resources have been created or deployed.
+The project is deployed on Vercel with Supabase-backed newsroom storage. The steps below also document how to configure another environment.
 
 1. Create a Supabase project. Run `supabase/setup.sql` in its SQL editor. This creates a private single-row newsroom state table, service-role-only RPC functions, and the private `aduke-uploads` bucket.
 2. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` for local setup. Keep the service role key server-only; never commit it or prefix it with `NEXT_PUBLIC_`. Optionally set `SUPABASE_UPLOAD_BUCKET` if using a different configured bucket.
@@ -36,3 +36,13 @@ Vercel settings: import Hurkify-Team/Aduke-Blog, framework Next.js, root `./`, d
 
 ## Team access rollout
 Existing owner credentials and sessions are retained. The owner's username is `owner`. No new SQL or cloud migration is required for team accounts; `team.json` is added to the existing private state when the owner creates the first invitation. Editors and Authors activate through `/admin/join` and set their own passwords. Keep setup links private; they expire after seven days and are single-use. Team management is owner-only. Do not run test scripts against production account data; `verify:team` uses an isolated temporary local newsroom.
+
+
+## Daily news radar
+The official Instagram and TikTok profiles are linked in the public header. The admin News radar collects dated public BBC, Channels Television and Premium Times feed leads. Gemini suggests original angles, verification questions, article outlines and social captions; it does not prove authenticity, grant image rights or publish automatically. Source article comparison respects the existing importer access rules. Social accounts behind login are not monitored.
+
+The daily Production cron is declared in vercel.json for 07:00 UTC (08:00 Lagos). Vercel Hobby may start it anywhere within that hour. Copy CRON_SECRET from your private .env.local into Vercel Settings > Environment Variables for Production, then redeploy. Never paste this secret into chat or commit it. A secret has been generated locally. Keep GEMINI_API_KEY and GEMINI_IMPORT_MODEL configured there too. The scheduler requires a Bearer secret and uses the existing private Supabase JSON storage; no SQL migration is required.
+
+Open /admin > News radar & rewrite ideas. Owners can pause daily checks and change editorial focus; owners and editors can refresh or compare sources. Authors can read the cached ideas and prepare their own drafts. Manual scans are limited to once per 15 minutes, and research actions to 12 per hour. If Gemini is unavailable or its free quota is exhausted, recent feed headlines remain available. Existing cached results survive feed failures. No paid search API or Google Search grounding is enabled; use a Gemini model/project with available free quota.
+
+Validation: npm run verify:radar uses isolated mocked feeds and Gemini responses; it never publishes or calls the paid/search services.

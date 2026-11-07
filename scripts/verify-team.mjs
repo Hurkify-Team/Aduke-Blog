@@ -14,10 +14,13 @@ async function req(url,{cookie,method='GET',body,origin=base,form}={}){return fe
 const cookie=response=>response.headers.get('set-cookie')?.split(';')[0];
 async function json(url,options){const response=await req(url,options);const data=await response.json();assert.equal(response.status,200,JSON.stringify(data));return {response,data};}
 try{
-  server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3021'],{windowsHide:true,env:{...process.env,ADUKE_DATA_DIR:directory,SUPABASE_URL:'',SUPABASE_SERVICE_ROLE_KEY:'',VERCEL:'',GEMINI_API_KEY:'',ADUKE_DEMO_CONTENT:'false'},stdio:['ignore','pipe','pipe']});
+  server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3021'],{windowsHide:true,env:{...process.env,ADUKE_DATA_DIR:directory,SUPABASE_URL:'',SUPABASE_SERVICE_ROLE_KEY:'',VERCEL:'',GEMINI_API_KEY:'',CRON_SECRET:'radar-test-secret',ADUKE_DEMO_CONTENT:'false'},stdio:['ignore','pipe','pipe']});
   server.stdout.on('data',data=>output+=data);server.stderr.on('data',data=>output+=data);
   let ready=false;for(let i=0;i<60;i++){if(server.exitCode!==null)throw Error('Test server exited');try{if((await req('/admin')).ok){ready=true;break;}}catch{}await new Promise(resolve=>setTimeout(resolve,500));}check(ready,'Test server ready');
   const ownerPassword=password();let owner=cookie((await json('/api/admin/auth',{method:'POST',body:{action:'setup',password:ownerPassword}})).response);
+  check((await req('/api/admin/radar')).status===401,'Anonymous cannot read research');
+  check((await req('/api/cron/news-radar')).status===401,'Cron rejects missing secret');
+  check((await fetch(base+'/api/cron/news-radar',{headers:{Authorization:'Bearer wrong'}})).status===401,'Cron rejects wrong secret');
   check((await req('/api/admin/team')).status===403,'Anonymous cannot list team');
   check((await req('/api/admin/team',{method:'POST',cookie:owner,origin:'https://example.org',body:{action:'invite',username:'outsider',name:'Outsider',role:'editor'}})).status===400,'Cross-origin invitation blocked');
   check((await req('/api/admin/team',{method:'POST',cookie:owner,body:{action:'invite',username:'owner',name:'Another owner',role:'owner'}})).status===400,'Owner role cannot be assigned');
@@ -38,6 +41,11 @@ try{
   check((await req('/api/admin/team',{cookie:editor})).status===403,'Editor cannot list team');
   check((await req('/api/admin/team',{cookie:editor,method:'POST',body:{action:'disable',id:authorInfo.id}})).status===403,'Editor cannot alter accounts');
   check((await req('/api/categories',{cookie:author,method:'POST',body:{name:'Unauthorised topic'}})).status===403,'Author cannot create categories');
+  check((await req('/api/admin/radar',{cookie:author,method:'POST',body:{action:'refresh'}})).status===403,'Author cannot spend research quota');
+  check((await req('/api/admin/radar',{cookie:editor,method:'POST',body:{action:'settings',enabled:false,focus:'Music'}})).status===403,'Editor cannot change background preferences');
+  check((await json('/api/admin/radar',{cookie:author})).data.state.ideas.length===0,'Author can read cached ideas');
+  await json('/api/admin/radar',{cookie:owner,method:'POST',body:{action:'settings',enabled:false,focus:'Music'}});
+  check((await (await fetch(base+'/api/cron/news-radar',{headers:{Authorization:'Bearer radar-test-secret'}})).json()).skipped===true,'Authenticated paused cron skips network scan');
   const fixture={title:'Owner private story',slug:'owner-private-story',category:'Music',author:'Editorial team',excerpt:'A useful introduction to this story.',body:'This article contains enough words and detail for a complete publishing workflow verification.',cover:'',coverAlt:'',video:'',status:'draft',featured:false,trending:false};
   const ownerPost=(await json('/api/admin/posts',{cookie:owner,method:'POST',body:fixture})).data;
   check(!(await json('/api/admin/posts',{cookie:author})).data.some(post=>post.id===ownerPost.id),'Author cannot list owner drafts');

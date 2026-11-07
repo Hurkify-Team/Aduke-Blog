@@ -30,7 +30,7 @@ export function newsUrl(input: string): URL {
   url.hash = '';
   return url;
 }
-export async function publicPage(input: string, options: { maxBytes?: number; accept?: string; redirects?: number; beforeRedirect?: (url: URL) => Promise<void>; deadline?: number; image?: boolean } = {}): Promise<{ url: string; status: number; text: string; type: string; bytes: Buffer }> {
+export async function publicPage(input: string, options: { maxBytes?: number; accept?: string; redirects?: number; beforeRedirect?: (url: URL) => Promise<void>; deadline?: number; image?: boolean; feed?: boolean } = {}): Promise<{ url: string; status: number; text: string; type: string; bytes: Buffer }> {
   const maxBytes = options.maxBytes || 1500000;
   const expires = options.deadline || Date.now() + 35000;
   let url = newsUrl(input);
@@ -53,7 +53,7 @@ export async function publicPage(input: string, options: { maxBytes?: number; ac
         const status = response.statusCode || 0;
         if ([301, 302, 303, 307, 308].includes(status)) { response.resume(); resolve({ status, location: response.headers.location, text: '', type: '', bytes: Buffer.alloc(0) }); return; }
         const type = String(response.headers['content-type'] || '');
-        if (!(options.image ? /^image\/(jpeg|png|webp)(;|$)/i.test(type) : /^(text\/html|application\/xhtml\+xml|text\/plain)/i.test(type))) { response.destroy(); reject(new Error('The address must return a readable article page.')); return; }
+        if (!(options.image ? /^image\/(jpeg|png|webp)(;|$)/i.test(type) : options.feed ? /^(text\/(xml|plain)|application\/(rss\+xml|atom\+xml|xml))(;|$)/i.test(type) : /^(text\/html|application\/xhtml\+xml|text\/plain)/i.test(type))) { response.destroy(); reject(new Error('The address must return a readable article page.')); return; }
         if (Number(response.headers['content-length']) > maxBytes || response.headers['content-encoding'] && response.headers['content-encoding'] !== 'identity') { response.destroy(); reject(new Error('The source response is too large or uses unsupported encoding.')); return; }
         const chunks: Buffer[] = []; let total = 0;
         response.on('data', chunk => { total += chunk.length; if (total > maxBytes) { response.destroy(new Error('The source page is too large.')); } else chunks.push(Buffer.from(chunk)); });

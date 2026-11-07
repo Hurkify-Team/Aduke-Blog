@@ -137,3 +137,48 @@
 .owner-app .author-review-note { padding:16px; margin:20px 0 0; background:#f0f5ff; border-radius:9px; font-size:12px; line-height:1.8; color:#496489; }
 .owner-app .placement-options>label[for=homepage-placement] { font-size:12px; font-weight:700; }
 @media(max-width:760px) { .owner-app .team-members article { display:block; } .owner-app .team-members article>div:last-child { margin-top:14px; flex-wrap:wrap; } .owner-app .team-access-content { padding:0 16px 18px; } }
+
+.owner-app .news-radar { margin:18px 0 0; background:#fff; border:1px solid #dce5f1; border-radius:14px; }
+.owner-app .news-radar>summary { display:flex; align-items:center; gap:12px; padding:20px; list-style:none; cursor:pointer; font-size:13px; font-weight:700; }
+.owner-app .news-radar>summary svg { color:#476da5; }
+.owner-app .news-radar>summary small { margin:0 0 0 auto; font-weight:400; }
+.owner-app .radar-content { padding:0 22px 22px; border-top:1px solid #edf1f8; }
+.owner-app .radar-content>p { font-size:12px; line-height:1.8; color:#667892; }
+.owner-app .radar-topline { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 0; }
+.owner-app .radar-topline>span { font-size:11px; color:#657997; }
+.owner-app .radar-topline button,.owner-app .radar-settings button { border-radius:8px; padding:10px 13px; font-size:12px; }
+.owner-app .radar-settings { background:#f5f8fe; border:1px solid #e1e8f4; border-radius:9px; padding:14px; margin-bottom:16px; }
+.owner-app .radar-settings summary,.owner-app .radar-warnings summary { cursor:pointer; font-size:12px; font-weight:700; }
+.owner-app .radar-settings button { margin-top:12px; }
+.owner-app .radar-checkbox { display:flex; align-items:center; gap:9px; }
+.owner-app .radar-checkbox input { width:16px; height:16px; accent-color:#031239; }
+.owner-app .radar-busy { padding:12px; background:#edf4ff; border-radius:8px; }
+.owner-app .radar-warnings { margin:15px 0; padding:12px; background:#fff9ec; border-radius:8px; font-size:12px; line-height:1.8; color:#7c663c; }
+.owner-app .radar-warnings ul { list-style:disc; padding-left:20px; margin-top:8px; }
+.owner-app .radar-ideas { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:16px; margin-top:18px; }
+.owner-app .radar-ideas>article { border:1px solid #dce4f1; padding:20px; border-radius:12px; background:linear-gradient(160deg,#fff,#f9fbff); min-width:0; }
+.owner-app .radar-labels { display:flex; gap:7px; flex-wrap:wrap; }
+.owner-app .radar-labels span { padding:5px 7px; border-radius:5px; background:#edf2fc; color:#41618c; font-size:9px; font-weight:700; }
+.owner-app .radar-labels span+span { background:#fff4dd; color:#8d6a22; }
+.owner-app .radar-ideas h3 { font-size:18px; line-height:1.4; letter-spacing:-.3px; margin:13px 0; }
+.owner-app .radar-ideas p,.owner-app .radar-ideas li { font-size:12px; line-height:1.8; color:#5a6e8b; }
+.owner-app .radar-ideas p { margin:10px 0; }
+.owner-app .radar-ideas h4 { font-size:12px; margin:15px 0 7px; text-transform:capitalize; }
+.owner-app .radar-ideas ul,.owner-app .radar-ideas ol { padding-left:20px; }
+.owner-app .radar-ideas ul { list-style:disc; }.owner-app .radar-ideas ol { list-style:decimal; }
+.owner-app .radar-ideas details { padding:12px 0; border-top:1px solid #e4eaf4; }
+.owner-app .radar-ideas details summary { cursor:pointer; font-size:12px; font-weight:700; }
+.owner-app .radar-sources { display:grid; gap:8px; padding:12px 0; }
+.owner-app .radar-sources a { display:flex; align-items:center; gap:7px; font-size:11px; color:#426b9f; }
+.owner-app .radar-caption { padding:0 0 12px; border-bottom:1px dashed #dfe6f0; }
+.owner-app .radar-caption button { display:flex; align-items:center; gap:7px; color:#e4405a; font-size:11px; }
+.owner-app .radar-ideas p.radar-caution { background:#fff7e9; color:#816437; border-radius:7px; padding:11px; font-size:11px; }
+.owner-app .radar-card-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+.owner-app .radar-card-actions button { padding:9px 12px; font-size:11px; border-radius:7px; }
+.owner-app .radar-feed-list { margin-top:20px; font-size:12px; }
+.owner-app .radar-feed-list summary { cursor:pointer; font-weight:700; padding:10px 0; }
+.owner-app .radar-feed-list a { display:block; padding:13px 0; border-bottom:1px solid #e4eaf3; }
+.owner-app .radar-feed-list span { display:block; font-size:10px; color:#788ba5; margin-top:5px; }
+.owner-app .radar-empty { padding:20px 0; }
+.owner-app .radar-content p.radar-footnote { font-size:11px; border-top:1px solid #e5eaf4; margin-top:18px; padding-top:14px; }
+@media(max-width:760px) { .owner-app .news-radar>summary small { display:none; } .owner-app .radar-content { padding:0 15px 18px; } .owner-app .radar-ideas>article { padding:16px; } .owner-app .radar-topline { align-items:flex-start; flex-direction:column; } }
