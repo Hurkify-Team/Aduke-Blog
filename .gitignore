@@ -3,7 +3,7 @@ node_modules/
 *.tsbuildinfo
 .npm-cache/
 .env*.local
-data/
+/data/
 public/uploads/
 backups/
 .env
