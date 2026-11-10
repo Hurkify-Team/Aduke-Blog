@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { siteOrigin } from '@/lib/config';
 import './globals.css';
 import './publishing.css';
+import './spotlight.css';
 import './admin-polish.css';
 
 export const metadata: Metadata = {

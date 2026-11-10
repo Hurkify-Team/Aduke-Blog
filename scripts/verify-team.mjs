@@ -96,6 +96,10 @@ try{
   check(carouselPosts.filter(post=>post.spotlight&&post.status==='published').length>=5,'Multiple Spotlight selections are retained');
   const carouselHtml=await(await req('/')).text();
   check(carouselHtml.includes('aria-roledescription="carousel"')&&carouselHtml.includes('5 of 5'),'Homepage renders five spotlight slides');
+  const {load}=await import('cheerio');const spotlight=load(carouselHtml);
+  check(spotlight('.spotlight-preview').length===5,'All five stories have labelled thumbnail selectors');
+  check(spotlight('.spotlight-slide:not([hidden]) .spotlight-byline time').length===1,'Active Spotlight includes publication context');
+  check(spotlight('.spotlight-portrait').length===5&&spotlight('.spotlight-ambient[aria-hidden="true"]').length===5,'Original images remain distinct from decorative backdrops');
   const recoveredPassword=password(),recoveryToken=randomBytes(32).toString('hex');
   const {createHash}=await import('node:crypto');
   await writeFile(path.join(directory,'owner-recovery.json'),JSON.stringify({hash:createHash('sha256').update(recoveryToken).digest('hex'),expires:Date.now()+60000}));
