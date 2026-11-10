@@ -15,7 +15,7 @@ export default function ArtistSpotlight({posts}:{posts:Post[]}) {
   const touchStart=useRef<{x:number;y:number}|null>(null);
   const automatic=count>1&&!paused&&!hover&&!focused&&!reduced&&visible;
   useEffect(()=>{const media=window.matchMedia('(prefers-reduced-motion: reduce)');const update=()=>setReduced(media.matches);const visibility=()=>setVisible(!document.hidden);update();visibility();media.addEventListener('change',update);document.addEventListener('visibilitychange',visibility);return()=>{media.removeEventListener('change',update);document.removeEventListener('visibilitychange',visibility);};},[]);
-  useEffect(()=>{if(count<2||paused||hover||focused||reduced||!visible)return;const timer=window.setInterval(()=>setIndex(current=>(current+1)%count),7000);return()=>window.clearInterval(timer);},[count,paused,hover,focused,reduced,visible]);
+  useEffect(()=>{if(count<2||paused||hover||focused||reduced||!visible)return;const timer=window.setInterval(()=>setIndex(current=>(current+1)%count),10000);return()=>window.clearInterval(timer);},[count,paused,hover,focused,reduced,visible]);
   function move(offset:number){setIndex((active+offset+count)%count);}
   return <section className="spotlight-section" aria-label="Artist spotlight and featured stories" aria-roledescription="carousel" onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)} onFocusCapture={()=>setFocused(true)} onBlurCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget))setFocused(false);}}>
     <div className="spotlight-shell">
