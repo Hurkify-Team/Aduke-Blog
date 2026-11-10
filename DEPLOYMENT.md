@@ -25,7 +25,7 @@ Enabling Supabase switches the source of truth. It does not silently upload loca
 - Finish About/Advertise/Contact pages with verified business information.
 - Browser visual QA against the original desktop and mobile design; no connected browser was available during implementation.
 - Pagination, article revisions and richer media management are future enhancements. Recoverable archival is implemented.
-- Email-based password recovery is not implemented; use the dashboard password change while signed in and retain secure account recovery procedures.
+- Configure Resend and the owner recovery inbox before relying on email password recovery; retain the private terminal recovery backup.
 
 
 ## Migrate the existing local newsroom
@@ -46,3 +46,17 @@ The daily Production cron is declared in vercel.json for 07:00 UTC (08:00 Lagos)
 Open /admin > News radar & rewrite ideas. Owners can pause daily checks and change editorial focus; owners and editors can refresh or compare sources. Authors can read the cached ideas and prepare their own drafts. Manual scans are limited to once per 15 minutes, and research actions to 12 per hour. If Gemini is unavailable or its free quota is exhausted, recent feed headlines remain available. Existing cached results survive feed failures. No paid search API or Google Search grounding is enabled; use a Gemini model/project with available free quota.
 
 Validation: npm run verify:radar uses isolated mocked feeds and Gemini responses; it never publishes or calls the paid/search services.
+
+
+## Owner email recovery and team password resets
+Configure these server-only Vercel Production variables and redeploy:
+- OWNER_RECOVERY_EMAIL: the owner's controlled recovery inbox. This is configured by the trusted deployment administrator, not through a public form.
+- RESEND_API_KEY: a sending key from Resend.
+- AUTH_EMAIL_FROM: an email sender on your verified domain, for example Aduke Radio TV <security@yourdomain.com>.
+- NEXT_PUBLIC_SITE_URL: the canonical HTTPS production URL, e.g. https://hurkify-team-aduke-blog.vercel.app (never the localhost development URL).
+
+Create a Resend account at https://resend.com, add and verify your own sending domain using its DNS instructions, then create a sending API key. See https://resend.com/docs/dashboard/domains/introduction and https://resend.com/docs/api-reference/emails/send-email . Use the owner's real inbox for OWNER_RECOVERY_EMAIL, not the public sender address unless it is monitored. Disable click/open tracking for password-reset messages in your sending-domain settings. Email delivery and inbox receipt must be checked after configuration; the implementation tests use a mocked mail transport and send no real emails. The Vercel subdomain belongs to Vercel and cannot serve as your Resend-verified sending domain.
+
+Open /admin > Blog owner > Request an owner recovery email. Links expire in 30 minutes, are stored hashed, are single-use, and are invalidated by a password change. The request response does not disclose whether an entered address matches. Delivery runs after the response on Vercel. Requests have a five-minute per-owner cooldown and a separate hourly request limit, with failed deliveries allowing retry. Check Resend delivery logs if no email arrives. No SQL migration is required. Terminal-generated recovery links remain a backup when email is unavailable.
+
+For coworkers, only the owner can open Team access > Reset password on an active account. Share the generated 30-minute single-use link privately. The coworker chooses their password; roles and posts are retained. Successful reset revokes old sessions. Disabled accounts cannot reset; invitations remain separate seven-day setup links. Never share the owner's recovery email access or owner credentials with coworkers.

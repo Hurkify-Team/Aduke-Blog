@@ -24,7 +24,7 @@ Create the owner password on localhost and keep it in a password manager. Initia
 - A changed published URL redirects readers from the old URL. Keep published URLs stable where possible.
 - If another window saved the story first, reload it before saving your changes. This prevents silently overwriting newer edits.
 - Unsaved text can be recovered within the current browser tab after refresh. This is a recovery aid, not a server backup. Save drafts regularly. Sign-out clears the browser recovery copy.
-- **Account settings** lets you change your password and signs out other sessions. Email-based password reset is not yet available.
+- **Account settings** lets you change your password and signs out other sessions. Owner email password reset is available once email delivery is configured; coworkers ask the owner for a private reset link.
 
 No posts are automatically written or published. The public homepage retains its original design. Live production publishing requires the configured persistent storage described in DEPLOYMENT.md.
 
@@ -81,16 +81,22 @@ The owner opens **Team access**, enters a coworker's name and unique username, a
 
 The owner can disable access, enable activated accounts, change roles or issue a replacement setup link. Disabling, changing a role or replacing a setup link invalidates that coworker's existing sessions. A replacement setup link requires setting a new password before signing in again. Disabling an account leaves its stories intact. Password changes and sign-out revoke that account's other sessions without signing out the rest of the team.
 
-Accounts and invitation hashes are stored in the existing private newsroom state (`team.json` locally or the Supabase state). Plain invitation tokens and passwords are not stored. Do not post setup links publicly. Owner password recovery still requires your secure recovery procedure; automatic recovery email is not provided.
+Accounts and invitation hashes are stored in the existing private newsroom state (`team.json` locally or the Supabase state). Plain invitation tokens and passwords are not stored. Do not post setup links publicly. Owner email recovery requires the Resend deployment configuration. The owner manages coworker password recovery through Team access.
 
 
 ## Owner recovery and coworker accounts
 The single owner signs in under Blog owner using the original password. Team member sign-in uses each invited coworker's username and password. From Team access, the owner creates an Editor or Author invitation and privately shares its single-use setup link. Authors submit drafts; Editors review and publish. Invitations expire in seven days; the owner can disable accounts or reissue links.
 
-If the owner password is forgotten, run npm run owner:recovery in the trusted project terminal (with the production Supabase environment configured). Open .owner-recovery-link.txt privately and follow its link within 30 minutes. Choose a new password to restore the same owner account. It rotates the owner's session secret, retains posts and colleagues, and invalidates the recovery link. No public endpoint can generate recovery links. Delete the private link file after use.
+If the owner password is forgotten, run npm run owner:recovery in the trusted project terminal (with the production Supabase environment configured). Open .owner-recovery-link.txt privately and follow its link within 30 minutes. Choose a new password to restore the same owner account. It rotates the owner's session secret, retains posts and colleagues, and invalidates the recovery link. The emergency backup link can only be generated from the trusted project terminal. Delete the private link file after use.
 
 ## Spotlight carousel
 Select Artist Spotlight in a Music story's Homepage placement and publish with an approved cover photograph. Spotlight selections are retained when another slide is added. Up to five stories rotate every ten seconds. Selected Spotlight stories take priority; recent published Music stories with approved covers fill spare slots. With fewer than five eligible stories, fewer slides appear. Featured Story chooses the opening story. The carousel pauses on hover/focus and respects reduced motion. Text and images occupy separate columns, stacking on mobile.
 
 ## Nigeria and foreign news
 The admin News radar defaults to Nigeria. Use Foreign news, Needs location review or All to switch. Location is inferred from the story's subject, not the outlet's country; ambiguous stories remain unclassified. This filter applies to cached leads and rewrite ideas, including older scans.
+
+
+## Forgot your password after hosting
+Once email delivery is configured, choose Blog owner > Request an owner recovery email on /admin, enter your configured recovery inbox and follow the emailed link within 30 minutes. Choose a new password; old passwords and sessions are revoked, while content is retained. If the email does not arrive, check spam and wait five minutes before retrying. Ask the site administrator to check delivery settings if needed. The original terminal recovery command remains an emergency backup.
+
+Team members must ask the owner for recovery. The owner selects Team access > Reset password for the coworker and privately shares the link. That link expires in 30 minutes and works once; the coworker sets their own new password. Resetting passwords does not promote roles or enable disabled accounts.

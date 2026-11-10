@@ -84,6 +84,6 @@ After building, run `node scripts/verify-launch-content.mjs` to check the real l
 
 
 ## Team accounts and Artist Spotlight
-The owner signs in at `/admin` using username `owner` and the existing password. The owner can invite Editors (publishing access) or Authors (own unpublished drafts only) through private one-use setup links in Team access, change roles and disable accounts. Account secrets and invitation hashes use the configured private newsroom storage. No email delivery is configured. See `OWNER-GUIDE.md` for the full workflow.
+The owner signs in at `/admin` using username `owner` and the existing password. The owner can invite Editors (publishing access) or Authors (own unpublished drafts only) through private one-use setup links in Team access, change roles and disable accounts. Account secrets and invitation hashes use the configured private newsroom storage. Owner email recovery is implemented through Resend but requires deployment configuration. Team password resets are issued privately by the owner through Team access. See `OWNER-GUIDE.md` for the full workflow.
 
 Choose **Publishing > Homepage placement > Artist Spotlight** for a Music article with a cover photograph. Publishing replaces the previous main feature. Use `npm run verify:team` for isolated role, invitation, revocation and spotlight integration checks.

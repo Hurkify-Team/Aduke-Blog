@@ -3,7 +3,7 @@ import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from
 import { readData, serialized, writeData } from './store';
 import type { StaffIdentity, TeamMember } from '@/types/team';
 export type Credentials = { salt: string; hash: string; secret: string };
-export type Account = TeamMember & Partial<Credentials> & { inviteHash?: string; inviteExpires?: number };
+export type Account = TeamMember & Partial<Credentials> & { inviteHash?: string; inviteExpires?: number; recoveryHash?:string; recoveryExpires?:number; recoveryBinding?:string };
 export function passwordCredentials(password: string): Credentials {
   if (password.length < 12 || password.length > 200) throw new Error('Use a password between 12 and 200 characters.');
   const salt = randomBytes(16).toString('hex');
@@ -51,17 +51,32 @@ export async function manageAccount(id: string, action: string, role?: unknown) 
   return serialized(async()=>{
     const members=await accounts(), account=members.find(member=>member.id===id);
     if (!account) throw new Error('Team member not found.');
-    if (!['disable','enable','role','invite'].includes(action)) throw new Error('Invalid team action.');
+    if (!['disable','enable','role','invite','recovery'].includes(action)) throw new Error('Invalid team action.');
     if (action==='role' && !['editor','author'].includes(String(role))) throw new Error('Choose Editor or Author.');
     if (action==='enable' && !account.hash) throw new Error('Send a new setup link for an account that has not activated.');
-    const updated:Account={...account,secret:randomBytes(32).toString('hex')};
+    if(action==='recovery'&&(account.status!=='active'||!account.hash||!account.secret))throw new Error('Only active team accounts can receive a password reset link. Use a setup invitation for a new account.');
+    const updated:Account={...account,secret:action==='recovery'?account.secret:randomBytes(32).toString('hex')};
+    delete updated.recoveryHash;delete updated.recoveryExpires;delete updated.recoveryBinding;
     let token;
     if (action==='disable') { updated.status='disabled'; delete updated.inviteHash; delete updated.inviteExpires; }
     if (action==='enable') updated.status='active';
     if (action==='role') updated.role=role as 'editor'|'author';
     if (action==='invite') { token=randomBytes(32).toString('hex'); updated.status='invited'; updated.inviteHash=createHash('sha256').update(token).digest('hex');updated.inviteExpires=Date.now()+7*24*60*60*1000; }
+    if(action==='recovery'){token=randomBytes(32).toString('hex');updated.recoveryHash=createHash('sha256').update(token).digest('hex');updated.recoveryExpires=Date.now()+30*60*1000;updated.recoveryBinding=createHash('sha256').update(account.secret!).digest('hex');}
     await writeData('team.json',members.map(member=>member.id===id?updated:member));
     return {token,member:{...identity(updated),status:updated.status,createdAt:updated.createdAt}};
+  });
+}
+export async function recoverStaffPassword(token:string,password:string){
+  return serialized(async()=>{
+    if(!/^[a-f0-9]{64}$/.test(token))throw new Error('Invalid team recovery link. Ask the owner for a new link.');
+    const members=await accounts(),hash=createHash('sha256').update(token).digest('hex');
+    const account=members.find(member=>member.status==='active'&&member.secret&&member.recoveryHash===hash&&(member.recoveryExpires||0)>Date.now()&&member.recoveryBinding===createHash('sha256').update(member.secret).digest('hex'));
+    if(!account)throw new Error('This team recovery link is invalid, expired or already used. Ask the owner for a new link.');
+    const updated:Account={...account,...passwordCredentials(password)};
+    delete updated.recoveryHash;delete updated.recoveryExpires;delete updated.recoveryBinding;
+    await writeData('team.json',members.map(member=>member.id===updated.id?updated:member));
+    return updated;
   });
 }
 export async function changeStaffPassword(user: StaffIdentity,current: string,next: string) {
@@ -69,6 +84,7 @@ export async function changeStaffPassword(user: StaffIdentity,current: string,ne
     const members=await accounts(), account=members.find(member=>member.id===user.id && member.status==='active');
     if (!account || !verifyCredentials(account,current)) throw new Error('Incorrect current password.');
     const updated={...account,...passwordCredentials(next)};
+    delete updated.recoveryHash;delete updated.recoveryExpires;delete updated.recoveryBinding;
     await writeData('team.json',members.map(member=>member.id===user.id?updated:member)); return updated;
   });
 }

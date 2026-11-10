@@ -14,7 +14,7 @@ async function req(url,{cookie,method='GET',body,origin=base,form}={}){return fe
 const cookie=response=>response.headers.get('set-cookie')?.split(';')[0];
 async function json(url,options){const response=await req(url,options);const data=await response.json();assert.equal(response.status,200,JSON.stringify(data));return {response,data};}
 try{
-  server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3021'],{windowsHide:true,env:{...process.env,ADUKE_DATA_DIR:directory,SUPABASE_URL:'',SUPABASE_SERVICE_ROLE_KEY:'',VERCEL:'',GEMINI_API_KEY:'',CRON_SECRET:'radar-test-secret',ADUKE_DEMO_CONTENT:'false'},stdio:['ignore','pipe','pipe']});
+  server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3021'],{windowsHide:true,env:{...process.env,ADUKE_DATA_DIR:directory,SUPABASE_URL:'',SUPABASE_SERVICE_ROLE_KEY:'',VERCEL:'',GEMINI_API_KEY:'',RESEND_API_KEY:'',OWNER_RECOVERY_EMAIL:'',AUTH_EMAIL_FROM:'',CRON_SECRET:'radar-test-secret',ADUKE_DEMO_CONTENT:'false'},stdio:['ignore','pipe','pipe']});
   server.stdout.on('data',data=>output+=data);server.stderr.on('data',data=>output+=data);
   let ready=false;for(let i=0;i<60;i++){if(server.exitCode!==null)throw Error('Test server exited');try{if((await req('/admin')).ok){ready=true;break;}}catch{}await new Promise(resolve=>setTimeout(resolve,500));}check(ready,'Test server ready');
   const ownerPassword=password();let owner=cookie((await json('/api/admin/auth',{method:'POST',body:{action:'setup',password:ownerPassword}})).response);
@@ -33,7 +33,7 @@ try{
   const teamFile=await readFile(path.join(directory,'team.json'),'utf8');check(!teamFile.includes(authorToken),'Only invitation hash stored');
   const authorInfo=(await json('/api/admin/invite',{method:'POST',body:{action:'preview',token:authorToken}})).data;
   check(authorInfo.username==='test.author'&&!('hash' in authorInfo),'Invitation preview returns safe identity');
-  const authorPassword=password(),editorPassword=password();
+  const authorPassword=password();let editorPassword=password();
   let author=cookie((await json('/api/admin/invite',{method:'POST',body:{action:'activate',token:authorToken,password:authorPassword}})).response);
   let editor=cookie((await json('/api/admin/invite',{method:'POST',body:{action:'activate',token:editorToken,password:editorPassword}})).response);
   check((await req('/api/admin/invite',{method:'POST',body:{action:'activate',token:authorToken,password:authorPassword}})).status===400,'Setup link is one-use');
@@ -46,6 +46,18 @@ try{
   check((await json('/api/admin/radar',{cookie:author})).data.state.ideas.length===0,'Author can read cached ideas');
   await json('/api/admin/radar',{cookie:owner,method:'POST',body:{action:'settings',enabled:false,focus:'Music'}});
   check((await (await fetch(base+'/api/cron/news-radar',{headers:{Authorization:'Bearer radar-test-secret'}})).json()).skipped===true,'Authenticated paused cron skips network scan');
+  check((await req('/api/admin/team',{cookie:author,method:'POST',body:{action:'recovery',id:editorInvite.member.id}})).status===403,'Author cannot issue reset links');
+  check((await req('/api/admin/team',{cookie:editor,method:'POST',body:{action:'recovery',id:authorInfo.id}})).status===403,'Editor cannot issue reset links');
+  const reset=(await json('/api/admin/team',{cookie:owner,method:'POST',body:{action:'recovery',id:editorInvite.member.id}})).data;
+  const teamToken=token(reset.setupUrl),teamPassword=password(),previousEditor=editor;
+  check(reset.expiresMinutes===30&&reset.setupUrl.includes('/admin/team-recover#'),'Team reset has a 30-minute private link');
+  check((await req('/api/admin/recover',{method:'POST',body:{token:teamToken,password:teamPassword}})).status===400,'Team token cannot reset owner');
+  check((await req('/api/admin/team-recover',{method:'POST',body:{token:teamToken,password:'short'}})).status===400,'Weak team reset password does not consume link');
+  editor=cookie((await json('/api/admin/team-recover',{method:'POST',body:{token:teamToken,password:teamPassword}})).response);
+  check((await req('/api/admin/posts',{cookie:previousEditor})).status===401,'Team reset revokes previous sessions');
+  check((await req('/api/admin/team-recover',{method:'POST',body:{token:teamToken,password:teamPassword}})).status===400,'Team recovery is single use');
+  editorPassword=teamPassword;
+  check((await req('/api/admin/forgot-password',{method:'POST',body:{email:'owner@example.test'}})).status===503,'Unconfigured email recovery reports setup needed');
   const fixture={title:'Owner private story',slug:'owner-private-story',category:'Music',author:'Editorial team',excerpt:'A useful introduction to this story.',body:'This article contains enough words and detail for a complete publishing workflow verification.',cover:'',coverAlt:'',video:'',status:'draft',featured:false,trending:false};
   const ownerPost=(await json('/api/admin/posts',{cookie:owner,method:'POST',body:fixture})).data;
   check(!(await json('/api/admin/posts',{cookie:author})).data.some(post=>post.id===ownerPost.id),'Author cannot list owner drafts');
@@ -74,6 +86,7 @@ try{
   await json('/api/admin/team',{cookie:owner,method:'POST',body:{action:'disable',id:authorInfo.id}});
   check((await req('/api/admin/posts',{cookie:author})).status===401,'Disabled user session revoked immediately');
   check((await req('/api/admin/auth',{method:'POST',body:{username:'test.author',password:authorPassword}})).status===401,'Disabled account cannot sign in');
+  check((await req('/api/admin/team',{cookie:owner,method:'POST',body:{action:'recovery',id:authorInfo.id}})).status===400,'Owner cannot reset a disabled account');
   await json('/api/admin/team',{cookie:owner,method:'POST',body:{action:'enable',id:authorInfo.id}});
   author=cookie((await json('/api/admin/auth',{method:'POST',body:{username:'test.author',password:authorPassword}})).response);
   check(!!author,'Enabled account can sign in');
@@ -113,6 +126,19 @@ try{
   check((await req('/api/admin/posts',{cookie:oldOwnerSession})).status===401,'Owner recovery revokes old sessions');
   check((await req('/api/admin/auth',{method:'POST',body:{username:'owner',password:ownerPassword}})).status===401,'Recovery revokes old owner password');
   check((await req('/api/admin/auth',{method:'POST',body:{username:'owner',password:recoveredPassword}})).status===200,'New owner password works');
+  const emailToken=randomBytes(32).toString('hex'),emailPassword=password();
+  const ownerState=JSON.parse(await readFile(path.join(directory,'owner.json'),'utf8'));
+  const emailed={hash:createHash('sha256').update(emailToken).digest('hex'),expires:Date.now()-1,binding:createHash('sha256').update(ownerState.secret).digest('hex'),requestedAt:Date.now(),delivery:'sent'};
+  await writeFile(path.join(directory,'owner-email-recovery.json'),JSON.stringify(emailed));
+  check((await req('/api/admin/recover',{method:'POST',body:{token:emailToken,password:emailPassword}})).status===400,'Expired emailed reset rejected');
+  await writeFile(path.join(directory,'owner-email-recovery.json'),JSON.stringify({...emailed,expires:Date.now()+60000,binding:'wrong-secret'}));
+  check((await req('/api/admin/recover',{method:'POST',body:{token:emailToken,password:emailPassword}})).status===400,'Emailed reset tied to owner account secret');
+  await writeFile(path.join(directory,'owner-email-recovery.json'),JSON.stringify({...emailed,expires:Date.now()+60000}));
+  check((await req('/api/admin/team-recover',{method:'POST',body:{token:emailToken,password:emailPassword}})).status===400,'Owner reset cannot recover team account');
+  const emailedOwner=(await json('/api/admin/recover',{method:'POST',body:{token:emailToken,password:emailPassword}})).response;
+  check((await req('/api/admin/posts',{cookie:cookie(emailedOwner)})).status===200,'Emailed reset restores existing owner');
+  check((await req('/api/admin/recover',{method:'POST',body:{token:emailToken,password:emailPassword}})).status===400,'Emailed reset is single use');
+  check((await req('/api/admin/posts',{cookie:owner})).status===401,'Email reset revokes previous owner session');
   console.log('PASS: '+checks+' team access and Artist Spotlight integration checks.');
 }catch(error){console.error('Failed after '+checks+' successful checks.');console.error(error.message);console.error(output.slice(-2000));process.exitCode=1;}
 finally{if(server&&server.exitCode===null){const ended=new Promise(resolve=>server.once('exit',resolve));server.kill();await ended;}if(uploaded&&/^\/uploads\/[a-f0-9-]+\.png$/.test(uploaded))await rm(path.join(process.cwd(),'public',uploaded),{force:true});for(const file of await readdir(directory))await rm(path.join(directory,file));await rmdir(directory);}

@@ -84,6 +84,8 @@ export async function changePassword(currentPassword: string, newPassword: strin
     const salt = randomBytes(16).toString('hex');
     const updated = { salt, hash: scryptSync(newPassword, salt, 64).toString('hex'), secret: randomBytes(32).toString('hex') };
     await writeData('owner.json', updated);
+    await writeData('owner-recovery.json',null);
+    await writeData('owner-email-recovery.json',null);
     return updated;
   });
 }

@@ -182,3 +182,5 @@
 .owner-app .radar-empty { padding:20px 0; }
 .owner-app .radar-content p.radar-footnote { font-size:11px; border-top:1px solid #e5eaf4; margin-top:18px; padding-top:14px; }
 @media(max-width:760px) { .owner-app .news-radar>summary small { display:none; } .owner-app .radar-content { padding:0 15px 18px; } .owner-app .radar-ideas>article { padding:16px; } .owner-app .radar-topline { align-items:flex-start; flex-direction:column; } }
+
+.account-recovery-status{font-size:12px;line-height:1.7;color:#526078;margin:14px 0 0;padding:14px;border-radius:8px;background:#f2f5fa}.login-help a{color:#174b96;text-decoration:underline}

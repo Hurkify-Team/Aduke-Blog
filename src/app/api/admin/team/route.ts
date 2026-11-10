@@ -10,6 +10,6 @@ export async function POST(request:Request) {
     checkOrigin(request);const input=await limitedJson(request,4096);
     const result=input.action==='invite' && input.id===undefined?await inviteAccount(input):typeof input.id==='string'?await manageAccount(input.id,String(input.action),input.role):null;
     if (!result) throw new Error('Invalid team action.');
-    return NextResponse.json({member:result.member,...(result.token?{setupUrl:new URL('/admin/join#token='+result.token,request.url).href}:{})},{headers:{'Cache-Control':'no-store'}});
+    return NextResponse.json({member:result.member,...(result.token?{setupUrl:new URL((input.action==='recovery'?'/admin/team-recover':'/admin/join')+'#token='+result.token,request.url).href,expiresMinutes:input.action==='recovery'?30:7*24*60}:{})},{headers:{'Cache-Control':'no-store'}});
   } catch(error) {return NextResponse.json({error:error instanceof Error?error.message:'Could not update team access.'},{status:400});}
 }

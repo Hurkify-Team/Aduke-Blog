@@ -1,0 +1,8 @@
+'use client';
+import { useState } from 'react';
+import Link from 'next/link';
+export default function ForgotPassword(){
+  const [email,setEmail]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');
+  async function request(event:React.FormEvent){event.preventDefault();setBusy(true);setError('');setMessage('');try{const response=await fetch('/api/admin/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email}),signal:AbortSignal.timeout(20000)});const data=await response.json();if(!response.ok)throw new Error(data.error);setMessage(data.message);}catch(error){setError(error instanceof Error?error.message:'Could not request recovery. Try later.');}finally{setBusy(false);}}
+  return <main className="owner-login"><section className="login-card"><span className="owner-eyebrow">OWNER PASSWORD RECOVERY</span><h1>Get back to your newsroom.</h1><p>Enter the recovery email configured for the blog owner. We will send a private link to choose a new password.</p><form onSubmit={request}><label htmlFor="recovery-email">Owner recovery email</label><input id="recovery-email" type="email" autoComplete="email" maxLength={254} required value={email} onChange={event=>setEmail(event.target.value)} disabled={busy}/><button className="primary-button" disabled={busy}>{busy?'Requesting...':'Send recovery link'}</button></form>{message&&<p className="owner-success" role="status">{message}</p>}{error&&<p className="owner-error" role="alert">{error}</p>}<p className="login-help">Team member? Ask the blog owner for a private password reset link. Team recovery is managed by the owner.</p><Link href="/admin">Back to sign in</Link></section></main>;
+}

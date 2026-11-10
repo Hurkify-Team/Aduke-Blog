@@ -15,7 +15,8 @@
     "verify:import": "node scripts/verify-import.mjs",
     "verify:team": "node scripts/verify-team.mjs",
     "verify:radar": "node scripts/verify-radar.mjs",
-    "owner:recovery": "node scripts/owner-recovery.mjs"
+    "owner:recovery": "node scripts/owner-recovery.mjs",
+    "verify:recovery": "node scripts/verify-recovery.mjs"
   },
   "dependencies": {
     "@tiptap/extension-image": "^3.32.0",
